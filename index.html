@@ -25,6 +25,9 @@ gtag('config', 'G-GEFWPKEB6Z', {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 
+<!-- jsPDF for Grocery PDF Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 :root{
   --sage:#b9c7b6;
@@ -615,6 +618,76 @@ select:focus{
   color:var(--sage-deep);
 }
 
+/* ---------- GROCERY AI CO-PILOT ---------- */
+
+.copilot-card{
+  margin-top:22px;
+  padding:22px;
+  border-radius:20px;
+  background:
+    linear-gradient(135deg,#f2f5ef,#faf6eb);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-soft);
+}
+
+.copilot-head{
+  display:flex;
+  align-items:flex-start;
+  gap:13px;
+}
+
+.copilot-icon{
+  width:45px;
+  height:45px;
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:var(--sage-deep);
+  color:#fff;
+  font-size:20px;
+}
+
+.copilot-title{
+  font-family:"Playfair Display",serif;
+  font-size:23px;
+  color:var(--sage-deep);
+}
+
+.copilot-subtitle{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:2px;
+}
+
+.copilot-content{
+  margin-top:16px;
+  padding:17px;
+  background:rgba(255,255,255,.76);
+  border:1px solid var(--line);
+  border-radius:15px;
+}
+
+.copilot-content strong{
+  color:var(--sage-deep);
+}
+
+.copilot-content p{
+  color:var(--ink);
+  font-size:14px;
+}
+
+.copilot-content p + p{
+  margin-top:10px;
+}
+
+.copilot-empty{
+  color:var(--muted);
+  font-size:14px;
+}
+
+/* ---------- WELLNESS ---------- */
+
 .wellness-grid{
   display:grid;
   grid-template-columns:repeat(5,1fr);
@@ -638,6 +711,21 @@ select:focus{
 .wellness-item input{
   margin-top:8px;
 }
+
+.wellness-copilot{
+  margin-top:22px;
+  display:none;
+}
+
+.wellness-copilot.show{
+  display:block;
+}
+
+.wellness-copilot .copilot-content{
+  background:rgba(255,255,255,.82);
+}
+
+/* ---------- ABOUT ---------- */
 
 .about{
   background:linear-gradient(135deg,#edf2eb,#f8f4e9);
@@ -790,6 +878,8 @@ footer{
   font-weight:700;
 }
 
+/* ---------- MODALS ---------- */
+
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -842,6 +932,17 @@ footer{
   display:flex;
   justify-content:center;
   gap:10px;
+  flex-wrap:wrap;
+}
+
+.snapshot-options{
+  display:grid;
+  gap:10px;
+  margin-top:20px;
+}
+
+.snapshot-options .btn{
+  width:100%;
 }
 
 .toast{
@@ -871,6 +972,81 @@ footer{
   font-size:12px;
   color:var(--muted);
   margin-top:14px;
+}
+
+/* ---------- PRINT ---------- */
+
+@media print{
+
+  body{
+    background:#fff;
+  }
+
+  header,
+  .hero,
+  .section-header,
+  #money-map,
+  #calculators,
+  #wellness,
+  #about,
+  #grow,
+  #share,
+  footer,
+  .action-row,
+  .copilot-card,
+  .grocery-summary,
+  #groceryStatus,
+  .remove-btn,
+  .modal-overlay,
+  .toast{
+    display:none !important;
+  }
+
+  #grocery{
+    display:block !important;
+    padding:20px !important;
+  }
+
+  #grocery > .container{
+    width:100%;
+    max-width:none;
+  }
+
+  #grocery .card{
+    box-shadow:none;
+    border:0;
+    padding:0;
+  }
+
+  #grocery .card-head{
+    margin-bottom:20px;
+  }
+
+  #grocery .grocery-list{
+    display:flex;
+  }
+
+  #grocery .grocery-row{
+    grid-template-columns:1fr 90px 120px;
+  }
+
+  #grocery .grocery-row button{
+    display:none;
+  }
+
+  #grocery .grocery-row input{
+    border:0;
+    padding:5px;
+  }
+
+  body:after{
+    content:"Money Matters · Grocery Snapshot";
+    display:block;
+    text-align:center;
+    margin-top:20px;
+    color:#69736c;
+    font-size:12px;
+  }
 }
 
 @media(max-width:900px){
@@ -975,6 +1151,10 @@ footer{
 
   .social-link{
     justify-content:center;
+  }
+
+  .modal{
+    padding:23px;
   }
 }
 </style>
@@ -1560,6 +1740,7 @@ footer{
       <div class="action-row">
         <button class="btn btn-primary" onclick="addGroceryItem()">＋ Add Item</button>
         <button class="btn btn-secondary" onclick="saveGrocery()">💾 Save List</button>
+        <button class="btn btn-secondary" onclick="openGrocerySnapshot()">📤 Send My Grocery Snapshot</button>
         <button class="btn btn-secondary" onclick="resetGrocery()">↺ Reset</button>
       </div>
 
@@ -1585,6 +1766,30 @@ footer{
       </div>
 
       <div id="groceryStatus" class="status"></div>
+
+      <!-- GROCERY AI CO-PILOT -->
+      <div class="copilot-card">
+
+        <div class="copilot-head">
+
+          <div class="copilot-icon">🤖</div>
+
+          <div>
+            <div class="copilot-title">Grocery AI Co-Pilot</div>
+            <div class="copilot-subtitle">
+              A smarter second look before you head to the store.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="copilot-content" id="groceryCopilot">
+          <div class="copilot-empty">
+            Add your budget and a few grocery items. Your Co-Pilot will look at your plan and give you a practical money-saving move—not just another generic “shop smart” reminder.
+          </div>
+        </div>
+
+      </div>
 
     </div>
 
@@ -1654,6 +1859,26 @@ footer{
       </div>
 
       <div id="wellnessStatus" class="status"></div>
+
+      <!-- WELLNESS AI CO-PILOT -->
+      <div id="wellnessCopilot" class="copilot-card wellness-copilot">
+
+        <div class="copilot-head">
+
+          <div class="copilot-icon">🌿</div>
+
+          <div>
+            <div class="copilot-title">Your Wellness Co-Pilot</div>
+            <div class="copilot-subtitle">
+              A small reflection for the person behind the checklist.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="copilot-content" id="wellnessCopilotContent"></div>
+
+      </div>
 
     </div>
 
@@ -1874,6 +2099,44 @@ footer{
 
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="closeShareModal()">Done</button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- GROCERY SNAPSHOT MODAL -->
+<div class="modal-overlay" id="grocerySnapshotModal">
+
+  <div class="modal">
+
+    <div class="modal-icon">🛒</div>
+
+    <h3>My Grocery Snapshot</h3>
+
+    <p>
+      Keep your grocery plan somewhere useful—or take it with you.
+    </p>
+
+    <div class="snapshot-options">
+
+      <button class="btn btn-primary" onclick="emailGrocerySnapshot()">
+        📧 Email My Grocery Snapshot
+      </button>
+
+      <button class="btn btn-soft" onclick="downloadGroceryPDF()">
+        📄 Download Grocery PDF
+      </button>
+
+      <button class="btn btn-secondary" onclick="printGrocerySnapshot()">
+        🖨️ Print / Save as PDF
+      </button>
+
+      <button class="btn btn-secondary" onclick="closeGrocerySnapshot()">
+        Cancel
+      </button>
+
     </div>
 
   </div>
@@ -2625,6 +2888,8 @@ function updateGroceryTotals() {
     status.className = "status";
 
   }
+
+  updateGroceryCopilot();
 }
 
 document.getElementById("groceryBudget").addEventListener("input", updateGroceryTotals);
@@ -2643,6 +2908,391 @@ function saveGrocery() {
   showToast("Your grocery list was saved on this device.");
 
   trackEvent("grocery_list_saved");
+}
+
+
+/* ---------- GROCERY AI CO-PILOT ---------- */
+
+function updateGroceryCopilot() {
+
+  const copilot = document.getElementById("groceryCopilot");
+
+  if (!copilot) return;
+
+  const budget = getNumber("groceryBudget");
+  const currency = document.getElementById("groceryCurrency").value;
+
+  const validItems = groceryItems.filter(item => {
+    return String(item.name || "").trim() &&
+      Number(item.quantity) > 0 &&
+      Number(item.price) >= 0;
+  });
+
+  const total = groceryItems.reduce((sum, item) => {
+    return sum + ((Number(item.quantity) || 0) * (Number(item.price) || 0));
+  }, 0);
+
+  const remaining = budget - total;
+
+  if (budget <= 0 && validItems.length === 0) {
+
+    copilot.innerHTML = `
+      <div class="copilot-empty">
+        Add your budget and a few grocery items. Your Co-Pilot will look at your plan and give you a practical money-saving move—not just another generic “shop smart” reminder.
+      </div>
+    `;
+
+    return;
+  }
+
+  let title = "Your next grocery move";
+  let tip = "";
+  let action = "";
+
+  if (budget > 0 && total > budget) {
+
+    const over = total - budget;
+
+    title = "Your list has crossed the line.";
+
+    tip =
+      `You're currently ${formatMoney(over, currency)} over your budget. Instead of cutting random items, look for the item with the biggest line total first. That's where one small adjustment can create the most breathing room.`;
+
+    action =
+      "Try reducing the quantity, switching that item to a lower-cost alternative, or moving it to your next grocery run.";
+
+  } else if (budget > 0 && total === 0) {
+
+    title = "Start with the budget—not the cravings.";
+
+    tip =
+      `You have ${formatMoney(budget, currency)} available for groceries. Before adding items, decide what absolutely needs to make it into the cart. That gives every remaining amount a job.`;
+
+    action =
+      "Build the list around meals or essentials first, then use whatever remains for extras.";
+
+  } else if (budget > 0 && remaining <= budget * 0.10 && remaining > 0) {
+
+    title = "You're in the final stretch.";
+
+    tip =
+      `Only ${formatMoney(remaining, currency)} remains. At this point, don't treat the remaining amount as “extra money.” Treat it as your buffer for price changes, forgotten essentials, or one necessary replacement.`;
+
+    action =
+      "Before checkout, scan the list once more and remove one non-essential item if you already have enough food covered.";
+
+  } else if (budget > 0 && remaining > budget * 0.40) {
+
+    title = "You have useful breathing room.";
+
+    tip =
+      `You still have ${formatMoney(remaining, currency)} available from a ${formatMoney(budget, currency)} budget. That's a good moment to resist filling the gap just because it's there.`;
+
+    action =
+      "Keep part of that remaining amount untouched. A grocery budget that finishes below target gives your next shopping trip more flexibility.";
+
+  } else if (validItems.length >= 8) {
+
+    title = "Your list is getting long.";
+
+    tip =
+      `You have ${validItems.length} priced items. Longer lists create more opportunities for small impulse additions and duplicate purchases.`;
+
+    action =
+      "Group your list mentally into essentials, meal ingredients, and nice-to-have items. Review the nice-to-have group before checkout.";
+
+  } else if (validItems.length > 0) {
+
+    const highest = [...validItems].sort((a,b) => {
+      return ((Number(b.quantity)||0)*(Number(b.price)||0)) -
+             ((Number(a.quantity)||0)*(Number(a.price)||0));
+    })[0];
+
+    const highestTotal =
+      (Number(highest.quantity) || 0) *
+      (Number(highest.price) || 0);
+
+    title = "Here's where your list is talking.";
+
+    tip =
+      `"${highest.name}" currently represents ${formatMoney(highestTotal, currency)} of your planned spend. That doesn't mean you should remove it—it means you now know exactly where to look if your total needs to come down.`;
+
+    action =
+      "Before buying, ask: do I need this quantity now, or am I paying today for something I could buy later?";
+
+  } else {
+
+    title = "Give every peso a job.";
+
+    tip =
+      "Your grocery plan becomes much more useful when each item has a quantity and expected price. The goal isn't to predict perfectly—it's to make surprises visible before checkout.";
+
+    action =
+      "Add your must-buy items first, then watch the remaining budget before adding anything optional.";
+
+  }
+
+  copilot.innerHTML = `
+    <strong>💡 ${title}</strong>
+    <p>${tip}</p>
+    <p><strong>Try this:</strong> ${action}</p>
+  `;
+}
+
+
+/* ---------- GROCERY SNAPSHOT ---------- */
+
+function openGrocerySnapshot() {
+
+  updateGroceryTotals();
+
+  const budget = getNumber("groceryBudget");
+
+  if (budget <= 0 && groceryItems.length === 0) {
+    showToast("Add a grocery budget or item first.");
+    return;
+  }
+
+  document.getElementById("grocerySnapshotModal").classList.add("show");
+
+  trackEvent("grocery_snapshot_opened");
+}
+
+function closeGrocerySnapshot() {
+  document.getElementById("grocerySnapshotModal").classList.remove("show");
+}
+
+function getGrocerySnapshotData() {
+
+  const currency = document.getElementById("groceryCurrency").value;
+  const budget = getNumber("groceryBudget");
+
+  const items = groceryItems
+    .filter(item => String(item.name || "").trim())
+    .map(item => {
+
+      const quantity = Number(item.quantity) || 0;
+      const price = Number(item.price) || 0;
+      const total = quantity * price;
+
+      return {
+        name: String(item.name).trim(),
+        quantity,
+        price,
+        total
+      };
+
+    });
+
+  const total = items.reduce((sum, item) => sum + item.total, 0);
+  const remaining = budget - total;
+
+  return {
+    currency,
+    budget,
+    items,
+    total,
+    remaining
+  };
+}
+
+function buildGroceryEmailBody(data) {
+
+  let lines = [];
+
+  lines.push("MONEY MATTERS — MY GROCERY SNAPSHOT");
+  lines.push("");
+  lines.push(`Budget: ${formatMoney(data.budget, data.currency)}`);
+  lines.push(`Planned total: ${formatMoney(data.total, data.currency)}`);
+  lines.push(
+    data.remaining >= 0
+      ? `Remaining: ${formatMoney(data.remaining, data.currency)}`
+      : `Over budget: ${formatMoney(Math.abs(data.remaining), data.currency)}`
+  );
+  lines.push("");
+  lines.push("GROCERY ITEMS");
+  lines.push("");
+
+  if (!data.items.length) {
+    lines.push("No grocery items added yet.");
+  } else {
+
+    data.items.forEach((item, index) => {
+
+      lines.push(
+        `${index + 1}. ${item.name} — Qty: ${item.quantity} — ${formatMoney(item.total, data.currency)}`
+      );
+
+    });
+
+  }
+
+  lines.push("");
+  lines.push("Created with Money Matters.");
+
+  return lines.join("\n");
+}
+
+function emailGrocerySnapshot() {
+
+  const data = getGrocerySnapshotData();
+  const body = buildGroceryEmailBody(data);
+
+  const subject = "My Money Matters Grocery Snapshot";
+
+  const mailto =
+    `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  trackEvent("grocery_snapshot_email");
+
+  window.location.href = mailto;
+}
+
+function buildGroceryPDFContent(data) {
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    return false;
+  }
+
+  const { jsPDF } = window.jspdf;
+
+  const doc = new jsPDF();
+
+  let y = 22;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text("Money Matters", 20, y);
+
+  y += 10;
+
+  doc.setFontSize(15);
+  doc.text("My Grocery Snapshot", 20, y);
+
+  y += 12;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+
+  doc.text(
+    `Budget: ${formatMoney(data.budget, data.currency)}`,
+    20,
+    y
+  );
+
+  y += 7;
+
+  doc.text(
+    `Planned Total: ${formatMoney(data.total, data.currency)}`,
+    20,
+    y
+  );
+
+  y += 7;
+
+  if (data.remaining >= 0) {
+
+    doc.text(
+      `Remaining: ${formatMoney(data.remaining, data.currency)}`,
+      20,
+      y
+    );
+
+  } else {
+
+    doc.text(
+      `Over Budget: ${formatMoney(Math.abs(data.remaining), data.currency)}`,
+      20,
+      y
+    );
+
+  }
+
+  y += 13;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Grocery Items", 20, y);
+
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+
+  if (!data.items.length) {
+
+    doc.text("No grocery items added yet.", 20, y);
+
+  } else {
+
+    data.items.forEach((item, index) => {
+
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+
+      const line =
+        `${index + 1}. ${item.name} | Qty: ${item.quantity} | ${formatMoney(item.total, data.currency)}`;
+
+      const wrapped = doc.splitTextToSize(line, 170);
+
+      doc.text(wrapped, 20, y);
+
+      y += (wrapped.length * 6) + 3;
+
+    });
+
+  }
+
+  y += 12;
+
+  doc.setFontSize(9);
+  doc.setTextColor(105,115,108);
+  doc.text(
+    "Created with Money Matters — Powered by CathiesNest Digital",
+    20,
+    Math.min(y, 285)
+  );
+
+  doc.save("money-matters-grocery-snapshot.pdf");
+
+  return true;
+}
+
+function downloadGroceryPDF() {
+
+  const data = getGrocerySnapshotData();
+
+  trackEvent("grocery_snapshot_pdf");
+
+  try {
+
+    const downloaded = buildGroceryPDFContent(data);
+
+    if (downloaded) {
+
+      closeGrocerySnapshot();
+
+      showToast("Your grocery snapshot PDF is ready. 📄");
+
+      return;
+    }
+
+  } catch (error) {
+    console.error("PDF export failed:", error);
+  }
+
+  printGrocerySnapshot();
+}
+
+function printGrocerySnapshot() {
+
+  closeGrocerySnapshot();
+
+  trackEvent("grocery_snapshot_print");
+
+  setTimeout(() => {
+    window.print();
+  }, 150);
 }
 
 function loadGrocery() {
@@ -2724,7 +3374,128 @@ function saveWellness() {
   status.className = "status show success";
   status.textContent = "Today's wellness check was saved on this device. 🌿";
 
+  updateWellnessCopilot(data);
+
   trackEvent("wellness_updated");
+}
+
+function updateWellnessCopilot(data = null) {
+
+  if (!data) {
+
+    data = {
+      water: document.getElementById("wellWater").checked,
+      sleep: document.getElementById("wellSleep").checked,
+      movement: document.getElementById("wellMovement").checked,
+      mind: document.getElementById("wellMind").checked,
+      care: document.getElementById("wellCare").checked
+    };
+
+  }
+
+  const completed = [
+    data.water,
+    data.sleep,
+    data.movement,
+    data.mind,
+    data.care
+  ].filter(Boolean).length;
+
+  const copilot = document.getElementById("wellnessCopilot");
+  const content = document.getElementById("wellnessCopilotContent");
+
+  let inspiration = "";
+  let tip = "";
+  let nextMove = "";
+
+  if (completed === 5) {
+
+    inspiration =
+      "You checked in on all five areas today. That is more than a checklist—it is five small signals that you made room for yourself.";
+
+    tip =
+      "Don't turn a strong day into a new standard you have to maintain perfectly. Let today's win be enough.";
+
+    nextMove =
+      "Protect one of these habits tomorrow. Consistency usually grows from something small enough to repeat.";
+
+  } else if (completed === 4) {
+
+    inspiration =
+      "Four out of five is still a meaningful check-in. You don't need a perfect day for your effort to count.";
+
+    tip =
+      "Notice the one area you left unchecked. Instead of treating it as a failure, ask what made it harder today.";
+
+    nextMove =
+      "Give that one area a tiny version tomorrow—something that takes a few minutes rather than a complete reset.";
+
+  } else if (completed === 3) {
+
+    inspiration =
+      "You showed up for three parts of yourself today. That's a real starting point.";
+
+    tip =
+      "Your goal isn't to complete every box every day. It's to notice what supports you and gradually make those things easier to repeat.";
+
+    nextMove =
+      "Choose one unchecked area that would make tomorrow feel lighter and give it your smallest possible action.";
+
+  } else if (completed === 2) {
+
+    inspiration =
+      "Two checked boxes may look small, but they are evidence that you did something for yourself today.";
+
+    tip =
+      "When energy is limited, don't build a giant self-improvement list. Pick one habit and make it almost too easy to skip.";
+
+    nextMove =
+      "Tomorrow, try adding just one more small act of care—not five.";
+
+  } else if (completed === 1) {
+
+    inspiration =
+      "One thing is still one thing. You noticed yourself today, and that matters.";
+
+    tip =
+      "Low-energy days need gentleness, not punishment. A tiny action can be enough to keep the habit alive.";
+
+    nextMove =
+      "Choose one simple thing tomorrow: drink water, move for a few minutes, pause your mind, rest, or do something kind for yourself.";
+
+  } else {
+
+    inspiration =
+      "Today doesn't have to be perfect to be worth checking in. Sometimes the first step is simply noticing that you need one.";
+
+    tip =
+      "Don't try to fix everything at once. When life feels full, start with the smallest action that gives you a little more breathing room.";
+
+    nextMove =
+      "Pick one box tomorrow. Just one. Let that be enough for the day.";
+
+  }
+
+  content.innerHTML = `
+    <strong>🌱 Today's reflection</strong>
+    <p>${inspiration}</p>
+
+    <p>
+      <strong>A gentle tip:</strong>
+      ${tip}
+    </p>
+
+    <p>
+      <strong>Your next small move:</strong>
+      ${nextMove}
+    </p>
+
+    <p style="margin-top:14px;color:var(--sage-dark);font-weight:700;">
+      ${completed}/5 checked today. Keep going at your own pace. 🤍
+    </p>
+  `;
+
+  copilot.classList.add("show");
 }
 
 function loadWellness() {
@@ -2765,6 +3536,10 @@ function resetWellness() {
   localStorage.removeItem(STORAGE.wellness);
 
   document.getElementById("wellnessStatus").className = "status";
+
+  document.getElementById("wellnessCopilot").classList.remove("show");
+
+  document.getElementById("wellnessCopilotContent").innerHTML = "";
 
   showToast("Wellness tracker reset.");
 }
@@ -2846,7 +3621,6 @@ document.addEventListener("DOMContentLoaded", () => {
   trackEvent("money_matters_loaded");
 
 });
-
 </script>
 
 </body>
